@@ -7,13 +7,10 @@ COPY Pipfile .
 COPY Pipfile.lock .
 RUN pipenv requirements >requirements.txt
 
-COPY main.py /app
-COPY gh.py /app
 WORKDIR /app
+COPY main.py /app
+COPY gh /app
 
-RUN p
-
-# We are installing a dependency here directly into our app source dir
 RUN pip install --target=/app -r /deps/requirements.txt
 
 # A distroless container image with Python and some basics like SSL certificates
