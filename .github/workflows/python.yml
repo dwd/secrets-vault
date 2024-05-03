@@ -21,7 +21,10 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Lint
+      - name: Flake8
         run: |
-          pip install flake8
-          flake8 main.py
+          flake8 main.py gh
+
+      - name: MyPy
+        run: |
+          mypy main.py gh
