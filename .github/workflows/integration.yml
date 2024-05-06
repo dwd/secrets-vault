@@ -7,10 +7,11 @@ jobs:
       - uses: actions/checkout@master
       - name: Self test
         id: selftest
-
-        # Put your action repo here
         uses: dwd/secrets-vault@master
+        with:
+          value_key: secret # Would normally be a Github Secret, probably the only one.
+          environment: prod-eu # Optional; defaults to `main`.
 
       - name: Check outputs
         run: |
-          test "${{ steps.selftest.outputs.myOutput }}" == "Hello world"
+          test "${{ steps.selftest.outputs.test }}" == "Hello world"

@@ -1,0 +1,5 @@
+environments:
+  - prod-eu
+  - prod-us
+  - dev-eu
+  - dev-us

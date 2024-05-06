@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 ansible-core = "*"
+pydantic = "*"
 
 [dev-packages]
 flake8 = "*"

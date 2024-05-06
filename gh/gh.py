@@ -2,8 +2,6 @@ from typing import Optional
 from io import FileIO
 import os
 
-foo = open('bar')
-
 
 class GithubAction:
     github_env: Optional[FileIO] = None
@@ -54,5 +52,8 @@ class GithubAction:
     def set_env(self, var, val):
         print(f'{var}={val}', file=self.env_file(), flush=True)
 
-    def input(self, var):
-        return os.environ.get(f'INPUT_{var}')
+    def input(self, var, default=None):
+        r = os.environ.get(f'INPUT_{var}', default)
+        if default is None and not r:
+            raise KeyError(f'INPUT {var} not set')
+        return r
