@@ -1,5 +1,5 @@
 import gh
-from ansible.parsing.vault import VaultLib
+from ansible_vault import Vault
 from pydantic import BaseModel
 import yaml
 
@@ -28,7 +28,7 @@ class Schema(BaseModel):
 
 class Main:
     gh: gh.GithubAction
-    vault_lib = VaultLib
+    vault: Vault
     file_root: str = '.github/secrets-vault'
     main_config: MainConfig
     schemas: dict[str, Schema]
@@ -42,7 +42,7 @@ class Main:
             secret = self.gh.input('VAULT_KEY')
             if not secret:
                 raise RuntimeError('VAULT_KEY must be provided')
-            self.vault_lib = VaultLib([('', secret)])
+            self.vault = Vault(secret)
             main_config = self.gh.input('CONFIG','.github/secrets-vault/config.yml')
             self.file_root = '/'.join(main_config.split('/')[0:-1]) or '.'
             with open(main_config, 'r') as stream:
@@ -57,6 +57,7 @@ class Main:
     def do_export(self) -> None:
         env = self.gh.input('ENVIRONMENT')
         schema = self.parse_schema(env)
+        self.load_secrets(schema)
         for key, secret in schema.secrets.items():
             if secret.mask:
                 self.gh.add_mask(secret.value)
@@ -65,18 +66,30 @@ class Main:
             else:
                 self.gh.set_output(key, secret.value)
 
+    def load_schema(self, environment: str) -> Schema:
+        schema = self.parse_schema(environment)
+        self.load_secrets(schema)
+        return schema
 
     def parse_schema(self, environment: str) -> Schema:
         filename = f'{self.file_root}/{environment}.yml'
         with open(filename) as f:
             schema_raw = yaml.safe_load(f)
             schema = Schema.parse_raw(schema_raw)
+            schema.name = environment
             self.schemas[environment] = schema
             return schema
 
     def load_secrets(self, schema: Schema):
-        vault_file = schema.vault_file
-        filename = f'{self.file_root}/{environment}.yml'
+        vault_file = schema.vault_file or f'{self.file_root}/{schema.name}.yml'
+        data = self.vault.load(vault_file)
+        for key in set(schema.secrets.keys()).union(set(data.keys())):
+            if key not in schema.secrets:
+                raise KeyError(f'Key {key} not found in schema {schema.name}')
+            if key in data:
+                schema.secrets[key].value = data[key]
+            elif not schema.optional:
+                raise ValueError(f'Key {key} not found in vault {schema.name}')
 
 
 def main():
