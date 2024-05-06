@@ -9,6 +9,7 @@ class MainConfig(BaseModel):
 
 
 class Secret(BaseModel):
+    description: str
     mask: bool = True
     env: bool = False
     output_file: str | None = None
@@ -19,11 +20,11 @@ class Secret(BaseModel):
 
 
 class Schema(BaseModel):
-    name: str | None
+    name: str | None = None
     parent: str | None = None
     abstract: bool = False
     vault_file: str | None = None
-    secrets: dict[str, Secret]
+    secrets: dict[str, Secret] = {}
 
 
 class Main:
@@ -34,10 +35,10 @@ class Main:
     schemas: dict[str, Schema]
 
     def __init__(self):
-        pass
+        self.schemas = {}
 
     def main(self) -> bool:
-        with gh.GitHubAction() as gha:
+        with gh.GithubAction() as gha:
             self.gh = gha
             secret = self.gh.input('VAULT_KEY')
             if not secret:
@@ -56,6 +57,7 @@ class Main:
 
     def do_export(self) -> None:
         env = self.gh.input('ENVIRONMENT')
+        self.gh.info(f'Exporting secrets for environment {env}')
         schema = self.parse_schema(env)
         self.load_secrets(schema)
         for key, secret in schema.secrets.items():
@@ -73,33 +75,33 @@ class Main:
 
     def parse_schema(self, environment: str) -> Schema:
         filename = f'{self.file_root}/{environment}.yml'
+        self.gh.info(f'Loading schema from {filename}')
         with open(filename) as f:
-            schema_raw = yaml.safe_load(f)
-            schema = Schema.parse_raw(schema_raw)
+            schema_raw = yaml.safe_load(f) or {}
+            schema = Schema.parse_obj(schema_raw)
             schema.name = environment
             self.schemas[environment] = schema
             return schema
 
     def load_secrets(self, schema: Schema):
-        vault_file = schema.vault_file or f'{self.file_root}/{schema.name}.yml'
-        data = self.vault.load(vault_file)
-        for key in set(schema.secrets.keys()).union(set(data.keys())):
-            if key not in schema.secrets:
-                raise KeyError(f'Key {key} not found in schema {schema.name}')
-            if key in data:
-                schema.secrets[key].value = data[key]
-            elif not schema.optional:
-                raise ValueError(f'Key {key} not found in vault {schema.name}')
+        vault_file = schema.vault_file or f'{self.file_root}/{schema.name}.vault'
+        self.gh.info(f'Loading secrets from {vault_file}')
+        with open(vault_file) as f:
+            data = self.vault.load(f.read())
+            for key in set(schema.secrets.keys()).union(set(data.keys())):
+                if key not in schema.secrets:
+                    raise KeyError(f'Key {key} not found in schema {schema.name}')
+                if key in data:
+                    schema.secrets[key].value = data[key]
+                elif not schema.optional:
+                    raise ValueError(f'Key {key} not found in vault {schema.name}')
 
 
 def main():
     import sys
-    try:
-        main = Main()
-        if not main.main():
-            sys.exit(1)
-    except Exception as e:
-        sys.exit(2)
+    main = Main()
+    if not main.main():
+        sys.exit(1)
 
 
 if __name__ == "__main__":

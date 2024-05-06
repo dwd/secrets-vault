@@ -49,6 +49,9 @@ class GithubAction:
     def error(self, msg):
         self.workflow_command('error', msg)
 
+    def info(self, msg):
+        self.workflow_command('info', msg)
+
     def set_env(self, var, val):
         print(f'{var}={val}', file=self.env_file(), flush=True)
 
