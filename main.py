@@ -39,12 +39,13 @@ class Main:
                 raise ValueError(f'Unsupported mode: {mode}')
 
     def do_lint(self) -> bool:
+        result = True
         for env in self.main_config.environments:
-            for env in self.main_config.environments:
-                schema = self.load_schema(env)
-                if not validate_schema(schema, self.gh.error):
-                    return False
-        return False
+            self.gh.notice(f'Running lint on {env}')
+            schema = self.load_schema(env)
+            if not validate_schema(schema, self.gh.error):
+                result = False
+        return result
 
     def do_export(self) -> bool:
         env = self.gh.input('ENVIRONMENT')
