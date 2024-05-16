@@ -81,7 +81,7 @@ class Main:
 
     def parse_schema(self, environment: str) -> Schema:
         filename = f'{self.file_root}/{environment}.yml'
-        self.gh.notice(f'Loading schema', file=filename)
+        self.gh.notice('Loading schema', file=filename)
         with open(filename) as f:
             schema_raw = yaml.safe_load(f) or {}
             schema = Schema.parse_obj(schema_raw)
@@ -93,7 +93,7 @@ class Main:
         if current_schema is None:
             current_schema = schema
         vault_file = current_schema.vault_file or f'{self.file_root}/{current_schema.name}.vault'
-        self.gh.notice(f'Loading secrets', file=vault_file)
+        self.gh.notice('Loading secrets', file=vault_file)
         with open(vault_file) as f:
             data = self.vault.load(f.read()) or {}
             load_secrets(schema, current_schema, data)
