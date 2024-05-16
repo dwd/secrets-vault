@@ -1,13 +1,17 @@
-name: "Python Container Action Template"
-description: "Get started with Python Container actions"
-author: "Jacob Tomlinson"
+name: "Secrets Vault"
+description: "Manage secrets alongside code with Ansible Vault"
+author: "Dave Cridland"
 inputs:
-  myInput:
-    description: "Input to use"
-    default: "world"
+  vault-key:
+    description: "Vault key (password) for the vault file(s)"
+    required: true
+  environment:
+    description: "A deployment environment, like main or production"
+    required: false
+    default: "main"
 outputs:
-  myOutput:
-    description: "Output from the action"
+  some-output:
+    description: "Outputs vary, they are generated dynamically from the vault contents"
 runs:
   using: "docker"
   image: "Dockerfile"

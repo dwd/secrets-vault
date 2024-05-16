@@ -9,7 +9,7 @@ jobs:
         id: selftest
         uses: dwd/secrets-vault@master
         with:
-          value_key: secret # Would normally be a Github Secret, probably the only one.
+          vault-key: secret # Would normally be a Github Secret, probably the only one.
           environment: prod-eu # Optional; defaults to `main`.
 
       - name: Check outputs

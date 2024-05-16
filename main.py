@@ -44,7 +44,7 @@ class Main:
             if not secret:
                 raise RuntimeError('VAULT_KEY must be provided')
             self.vault = Vault(secret)
-            main_config = self.gh.input('CONFIG','.github/secrets-vault/config.yml')
+            main_config = self.gh.input('CONFIG', '.github/secrets-vault/config.yml')
             self.file_root = '/'.join(main_config.split('/')[0:-1]) or '.'
             with open(main_config, 'r') as stream:
                 config_raw = yaml.safe_load(stream)

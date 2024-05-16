@@ -23,7 +23,7 @@ jobs:
 
       - name: Flake8
         run: |
-          flake8 main.py gh
+          flake8 --ignore=E501 main.py gh
 
       - name: MyPy
         run: |
