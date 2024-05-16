@@ -2,7 +2,7 @@ name: "Secrets Vault"
 description: "Manage secrets alongside code with Ansible Vault"
 author: "Dave Cridland"
 inputs:
-  vault-key:
+  vault_key:
     description: "Vault key (password) for the vault file(s)"
     required: true
   environment:
@@ -14,7 +14,7 @@ inputs:
     required: false
     default: "export"
 outputs:
-  some-output:
+  some_output:
     description: "Outputs vary, they are generated dynamically from the vault contents"
 runs:
   using: "docker"
