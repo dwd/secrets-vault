@@ -1,3 +1,5 @@
+from typing import Callable
+
 from pydantic import BaseModel
 
 from secrets.secret import Secret
@@ -29,3 +31,20 @@ def merge_schema(schema: Schema, current_schema: Schema) -> Schema:
             merged.secrets[key] = current_schema.secrets[key]
             merged.secrets[key].source = current_schema.name
     return merged
+
+
+def load_secrets(schema: Schema, current_schema: Schema, data: dict[str,str]) -> None:
+    for key in set(schema.secrets.keys()).union(set(data.keys())):
+        if key not in schema.secrets:
+            raise KeyError(f'Key {key} not found in schema {schema.name}')
+        if key in data:
+            schema.secrets[key].value = data[key]
+
+
+def validate_schema(schema: Schema, error) -> bool:
+    result = True
+    for key, secret in schema.secrets.items():
+        if secret.value is None and not secret.optional:
+            error(f'Secret key {key} is missing a value in schema {schema.name}')
+            result = False
+    return result

@@ -28,3 +28,7 @@ jobs:
       - name: MyPy
         run: |
           mypy main.py gh
+
+      - name: PyTest
+        run: |
+          python -m pytest 

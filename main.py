@@ -2,7 +2,7 @@ import gh
 from ansible_vault import Vault  # type: ignore
 import yaml
 
-from secrets.schema import Schema, merge_schema
+from secrets.schema import Schema, merge_schema, load_secrets, validate_schema
 from secrets.config import MainConfig
 
 
@@ -39,6 +39,11 @@ class Main:
                 raise ValueError(f'Unsupported mode: {mode}')
 
     def do_lint(self) -> bool:
+        for env in self.main_config.environments:
+            for env in self.main_config.environments:
+                schema = self.load_schema(env)
+                if not validate_schema(schema, self.gh.error):
+                    return False
         return False
 
     def do_export(self) -> bool:
@@ -46,8 +51,9 @@ class Main:
         self.gh.notice(f'Exporting secrets for environment {env}')
         if env not in self.main_config.environments:
             raise KeyError(f'Unsupported environment: {env}')
-        schema = self.parse_schema(env)
-        self.load_secrets(schema)
+        schema = self.load_schema(env)
+        if not validate_schema(schema, self.gh.error):
+            return False
         for key, secret in schema.secrets.items():
             if secret.mask:
                 self.gh.add_mask(secret.value)
@@ -89,11 +95,7 @@ class Main:
         self.gh.notice(f'Loading secrets', file=vault_file)
         with open(vault_file) as f:
             data = self.vault.load(f.read()) or {}
-            for key in set(schema.secrets.keys()).union(set(data.keys())):
-                if key not in schema.secrets:
-                    raise KeyError(f'Key {key} not found in schema {schema.name}')
-                if key in data:
-                    schema.secrets[key].value = data[key]
+            load_secrets(schema, current_schema, data)
 
 
 def main():

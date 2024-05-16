@@ -5,6 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+      - name: Lint test
+        uses: dwd/secrets-vault@master
+        with:
+          vault_key: secret # Would normally be a Github Secret, probably the only one.
+          mode: 'lint''
+
       - name: Self test
         id: selftest
         uses: dwd/secrets-vault@master
