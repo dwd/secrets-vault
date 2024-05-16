@@ -1,1 +1,1 @@
-_all__ = []
+_all__: list[str] = []
