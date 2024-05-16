@@ -62,7 +62,7 @@ class Main:
 
     def do_export(self) -> bool:
         env = self.gh.input('ENVIRONMENT')
-        self.gh.info(f'Exporting secrets for environment {env}')
+        self.gh.notice(f'Exporting secrets for environment {env}')
         schema = self.parse_schema(env)
         self.load_secrets(schema)
         for key, secret in schema.secrets.items():
@@ -81,7 +81,7 @@ class Main:
 
     def parse_schema(self, environment: str) -> Schema:
         filename = f'{self.file_root}/{environment}.yml'
-        self.gh.info(f'Loading schema from {filename}')
+        self.gh.notice(f'Loading schema from {filename}')
         with open(filename) as f:
             schema_raw = yaml.safe_load(f) or {}
             schema = Schema.parse_obj(schema_raw)
@@ -91,7 +91,7 @@ class Main:
 
     def load_secrets(self, schema: Schema):
         vault_file = schema.vault_file or f'{self.file_root}/{schema.name}.vault'
-        self.gh.info(f'Loading secrets from {vault_file}')
+        self.gh.notice(f'Loading secrets from {vault_file}')
         with open(vault_file) as f:
             data = self.vault.load(f.read())
             for key in set(schema.secrets.keys()).union(set(data.keys())):
