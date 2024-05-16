@@ -58,5 +58,10 @@ class GithubAction:
     def input(self, var, default=None):
         r = os.environ.get(f'INPUT_{var}', default)
         if default is None and not r:
+            for k in os.environ.keys():
+                if k.startswith('INPUT_'):
+                    self.info(f'Found possible input {k}')
+                else:
+                    self.info(f'Other envvar {k}')
             raise KeyError(f'INPUT {var} not set')
         return r

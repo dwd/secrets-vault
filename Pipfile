@@ -10,6 +10,7 @@ pydantic = "*"
 [dev-packages]
 flake8 = "*"
 mypy = "*"
+types-PyYAML = "*"
 
 [requires]
 python_version = "3.11"

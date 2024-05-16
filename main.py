@@ -1,5 +1,5 @@
 import gh
-from ansible_vault import Vault
+from ansible_vault import Vault  # type: ignore
 from pydantic import BaseModel
 import yaml
 
@@ -51,11 +51,16 @@ class Main:
                 self.main_config = MainConfig.parse_obj(config_raw)
             mode = self.gh.input('MODE', 'export')
             if mode == 'lint':
-                self.do_lint()
+                return self.do_lint()
             elif mode == 'export':
-                self.do_export()
+                return self.do_export()
+            else:
+                raise ValueError(f'Unsupported mode: {mode}')
 
-    def do_export(self) -> None:
+    def do_lint(self) -> bool:
+        return False
+
+    def do_export(self) -> bool:
         env = self.gh.input('ENVIRONMENT')
         self.gh.info(f'Exporting secrets for environment {env}')
         schema = self.parse_schema(env)
@@ -67,6 +72,7 @@ class Main:
                 self.gh.set_env(key, secret.value)
             else:
                 self.gh.set_output(key, secret.value)
+        return True
 
     def load_schema(self, environment: str) -> Schema:
         schema = self.parse_schema(environment)
@@ -93,7 +99,7 @@ class Main:
                     raise KeyError(f'Key {key} not found in schema {schema.name}')
                 if key in data:
                     schema.secrets[key].value = data[key]
-                elif not schema.optional:
+                elif not schema.secrets[key].optional:
                     raise ValueError(f'Key {key} not found in vault {schema.name}')
 
 

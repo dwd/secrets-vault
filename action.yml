@@ -9,6 +9,10 @@ inputs:
     description: "A deployment environment, like main or production"
     required: false
     default: "main"
+  mode:
+    description: "Either 'lint', to check all environments, or 'export'"
+    required: false
+    default: "export"
 outputs:
   some-output:
     description: "Outputs vary, they are generated dynamically from the vault contents"
