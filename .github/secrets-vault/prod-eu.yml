@@ -1,3 +1,5 @@
+parent: prod
+
 secrets:
   test:
     description: Test value, which ought to be Hello World to pass self-test
