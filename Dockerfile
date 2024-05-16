@@ -13,7 +13,8 @@ RUN /venv/bin/pip install -r /deps/requirements.txt
 FROM gcr.io/distroless/python3-debian12
 WORKDIR /app
 COPY --from=builder /venv /venv
+COPY secrets /venv/secrets/
 COPY main.py /venv/
-COPY gh /venv/
+COPY gh /venv/gh/
 ENTRYPOINT ["/venv/bin/python3"]
 CMD ["/venv/main.py"]

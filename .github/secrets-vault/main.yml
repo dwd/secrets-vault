@@ -1,0 +1,4 @@
+secrets:
+  final:
+    description: Test value, which ought to be Final Secret to pass self-test
+    final: true

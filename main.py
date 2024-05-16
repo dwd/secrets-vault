@@ -1,30 +1,9 @@
 import gh
 from ansible_vault import Vault  # type: ignore
-from pydantic import BaseModel
 import yaml
 
-
-class MainConfig(BaseModel):
-    environments: list[str] = ['main']
-
-
-class Secret(BaseModel):
-    description: str
-    mask: bool = True
-    env: bool = False
-    output_file: str | None = None
-    input_file: str | None = None
-    optional: bool = False
-    final: bool = False
-    value: str | None = None
-
-
-class Schema(BaseModel):
-    name: str | None = None
-    parent: str | None = None
-    abstract: bool = False
-    vault_file: str | None = None
-    secrets: dict[str, Secret] = {}
+from secrets.schema import Schema, merge_schema
+from secrets.config import MainConfig
 
 
 class Main:
@@ -33,9 +12,11 @@ class Main:
     file_root: str = '.github/secrets-vault'
     main_config: MainConfig
     schemas: dict[str, Schema]
+    merged_schemas: dict[str, Schema]
 
     def __init__(self):
         self.schemas = {}
+        self.merged_schemas = {}
 
     def main(self) -> bool:
         with gh.GithubAction() as gha:
@@ -63,6 +44,8 @@ class Main:
     def do_export(self) -> bool:
         env = self.gh.input('ENVIRONMENT')
         self.gh.notice(f'Exporting secrets for environment {env}')
+        if env not in self.main_config.environments:
+            raise KeyError(f'Unsupported environment: {env}')
         schema = self.parse_schema(env)
         self.load_secrets(schema)
         for key, secret in schema.secrets.items():
@@ -76,12 +59,22 @@ class Main:
 
     def load_schema(self, environment: str) -> Schema:
         schema = self.parse_schema(environment)
-        self.load_secrets(schema)
+        all_schemas = [schema]
+        while schema.parent is not None:
+            schema = self.parse_schema(schema.parent)
+            all_schemas = [schema] + all_schemas
+        merged = all_schemas[0]
+        remaining_schemas = all_schemas[1:]
+        while len(remaining_schemas) != 0:
+            merged = merge_schema(merged, remaining_schemas[0])
+            remaining_schemas = remaining_schemas[1:]
+        for current_schema in all_schemas:
+            self.load_secrets(schema, current_schema)
         return schema
 
     def parse_schema(self, environment: str) -> Schema:
         filename = f'{self.file_root}/{environment}.yml'
-        self.gh.notice(f'Loading schema from {filename}')
+        self.gh.notice(f'Loading schema', file=filename)
         with open(filename) as f:
             schema_raw = yaml.safe_load(f) or {}
             schema = Schema.parse_obj(schema_raw)
@@ -89,18 +82,18 @@ class Main:
             self.schemas[environment] = schema
             return schema
 
-    def load_secrets(self, schema: Schema):
-        vault_file = schema.vault_file or f'{self.file_root}/{schema.name}.vault'
-        self.gh.notice(f'Loading secrets from {vault_file}')
+    def load_secrets(self, schema: Schema, current_schema: Schema | None = None) -> None:
+        if current_schema is None:
+            current_schema = schema
+        vault_file = current_schema.vault_file or f'{self.file_root}/{current_schema.name}.vault'
+        self.gh.notice(f'Loading secrets', file=vault_file)
         with open(vault_file) as f:
-            data = self.vault.load(f.read())
+            data = self.vault.load(f.read()) or {}
             for key in set(schema.secrets.keys()).union(set(data.keys())):
                 if key not in schema.secrets:
                     raise KeyError(f'Key {key} not found in schema {schema.name}')
                 if key in data:
                     schema.secrets[key].value = data[key]
-                elif not schema.secrets[key].optional:
-                    raise ValueError(f'Key {key} not found in vault {schema.name}')
 
 
 def main():
