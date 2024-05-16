@@ -1,22 +1,19 @@
-FROM python:3-slim AS builder
-
-RUN pip install pipenv
-
+FROM debian:12-slim as builder
+RUN apt-get update && \
+    apt-get install --no-install-suggests --no-install-recommends --yes python3-pip python3-venv
+RUN python3 -m venv /deps
+RUN /deps/bin/python3 -m pip install pipenv
 WORKDIR /deps
 COPY Pipfile .
 COPY Pipfile.lock .
-RUN pipenv requirements >requirements.txt
-
+RUN /deps/bin/python3 -m pipenv requirements >requirements.txt
+RUN python3 -m venv /venv
+WORKDIR /venv
+RUN /venv/bin/pip install -r /deps/requirements.txt
+FROM gcr.io/distroless/python3-debian12
 WORKDIR /app
-COPY main.py /app
-COPY gh /app
-
-RUN pip install --target=/app -r /deps/requirements.txt
-
-# A distroless container image with Python and some basics like SSL certificates
-# https://github.com/GoogleContainerTools/distroless
-FROM gcr.io/distroless/python3-debian10
-COPY --from=builder /app /app
-WORKDIR /app
-ENV PYTHONPATH /app
-CMD ["/app/main.py"]
+COPY --from=builder /venv /venv
+COPY main.py /venv/
+COPY gh /venv/
+ENTRYPOINT ["/venv/bin/python3"]
+CMD ["/venv/main.py"]
