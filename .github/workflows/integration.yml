@@ -9,7 +9,7 @@ jobs:
         uses: dwd/secrets-vault@master
         with:
           vault_key: secret # Would normally be a Github Secret, probably the only one.
-          mode: 'lint''
+          mode: lint
 
       - name: Self test
         id: selftest
